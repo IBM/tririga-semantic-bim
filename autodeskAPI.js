@@ -1,6 +1,9 @@
 var ForgeSDK = require('forge-apis');
-var CLIENT_ID = 'jsqo7UBSyrkIwAFhnzaYvWQrBSwnb4Xk',
-  CLIENT_SECRET = 'RVa8SjLXQOu0K84j';
+
+require('dotenv').config()
+
+var CLIENT_ID = process.env.CLIENT_ID,
+  CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 var HubsApi = new ForgeSDK.HubsApi();
 var BucketsApi = new ForgeSDK.BucketsApi();
@@ -19,6 +22,10 @@ var oAuth2TwoLegged = new ForgeSDK.AuthClientTwoLegged(CLIENT_ID, CLIENT_SECRET,
   'bucket:delete'
 ], autoRefresh);
 
+
+var org = {
+  id: process.env.instance_id
+}
 
 var credentials
 oAuth2TwoLegged.authenticate().then(function(res) {
@@ -152,6 +159,7 @@ DerivativesApi.getManifest(encodedURN, {}, oAuth2TwoLegged, credentials).catch((
   console.log(err)
 }).then((res) => {
   console.log(res)
+  manifest = res
 })
 
 DerivativesApi.deleteManifest(encodedURN, oAuth2TwoLegged, credentials)

@@ -1,34 +1,37 @@
 var ForgeSDK = require('forge-apis')
-require('dotenv').config()
-
-var CLIENT_ID = process.env.CLIENT_ID,
-  CLIENT_SECRET = process.env.CLIENT_SECRET;
 var BucketsApi = new ForgeSDK.BucketsApi(); //Buckets Client
 var DerivativesApi = new ForgeSDK.DerivativesApi();
 var ObjectsApi = new ForgeSDK.ObjectsApi();
+var fs = require('fs')
+var request = require('request')
 
+require('dotenv').config()
 
 var bucketName = process.argv[2]
 var files = process.argv.slice(3)
-
+var CLIENT_ID = process.env.CLIENT_ID,
+  CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 var auth = function() {
-  var autoRefresh = true; // or false
-  var oAuth2TwoLegged = new ForgeSDK.AuthClientTwoLegged(CLIENT_ID, CLIENT_SECRET, [
-    'data:read',
-    'data:write',
-    'bucket:read',
-    'bucket:create',
-    'bucket:update',
-    'bucket:delete'
-  ], autoRefresh);
-  oAuth2TwoLegged.authenticate().then(function(res) {
-    console.log("credentials generated")
-    credentials = res
-    // token = credentials['access_token']
-  }, function(err) {
-    console.error(err);
-  });
+  return new Promise((resolve, reject) => {
+    var autoRefresh = true; // or false
+    oAuth2TwoLegged = new ForgeSDK.AuthClientTwoLegged(CLIENT_ID, CLIENT_SECRET, [
+      'data:read',
+      'data:write',
+      'bucket:read',
+      'bucket:create',
+      'bucket:update',
+      'bucket:delete'
+    ], autoRefresh);
+    oAuth2TwoLegged.authenticate().then(function(res) {
+      console.log("credentials generated")
+      credentials = res
+      resolve(credentials)
+      // token = credentials['access_token']
+    }, function(err) {
+      console.error(err);
+    })
+  })
 }
 
 // needed since ObjectsApi.uploadObject doesn't work
@@ -36,29 +39,29 @@ var uploadFile = (filePath) => {
   var fileName = filePath.split('/').slice(-1)[0]
   var url = `https://developer.api.autodesk.com/oss/v2/buckets/tririgabucket/objects/${fileName}`
   var fileContents = fs.readFileSync(filePath, 'utf8')
-  return new Promise ( (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request({
-        url: url,
-        method: 'PUT',
-        body: fileContents,
-        encoding: null,
-        headers: {
-         'Authorization': `Bearer ${credentials['access_token']}`
-        }
-      }, (error, response, body) => {
-        if (error) {
-           console.log('Error uploading file: ', error)
-           reject(error)
+      url: url,
+      method: 'PUT',
+      body: fileContents,
+      encoding: null,
+      headers: {
+        'Authorization': `Bearer ${credentials['access_token']}`
+      }
+    }, (error, response, body) => {
+      if (error) {
+        console.log('Error uploading file: ', error)
+        reject(error)
+      } else {
+        console.log(response.body.toString())
+        if (JSON.parse(response.body.toString())) {
+          var urn = JSON.parse(response.body.toString())['objectId']
+          console.log("urn: " + urn)
+          resolve(urn)
         } else {
-          console.log(response.body.toString() )
-          if ( JSON.parse(response.body.toString() ) ) {
-            var urn = JSON.parse(response.body.toString())['objectId']
-            console.log("urn: " + urn)
-            resolve(urn)
-          } else {
-            reject("Invalid JSON received")
-          }
+          reject("Invalid JSON received")
         }
+      }
     })
   })
 }
@@ -101,11 +104,10 @@ async function uploadFiles(files) { // (files) => {
 */
 
 // 1. Create bucket if it doesn't exist
-var config = {bucketname: []}
 var init = function() {
   BucketsApi.getBuckets({}, oAuth2TwoLegged, credentials).then(function(buckets) {
     //if (buckets.body.items.includes(bucketName)) {
-    if (buckets.body.items.filter( bucket => bucket.bucketKey == 'estate1' )) {
+    if (buckets.body.items.filter(bucket => bucket.bucketKey == 'estate1')) {
       console.log("bucket already exists, continuing")
       return
     } else {
@@ -124,10 +126,18 @@ var init = function() {
     // ]
     uploadFiles(files).then(() => {
       console.log("file upload(s) complete, translating")
-      config[bucketName] = urns
-      urns.map(() => {
+      var config = {
+        bucketName: urns
+      }
+      // config[bucketName] = urns
+      fs.writeFile(bucketName + "_meta.json", JSON.stringify(config), function(err) {
+        if (err) {
+          return console.log(err);
+        }
+        console.log("The file was saved!");
+      });
+      urns.map((urn) => {
         console.log(urn)
-
         var encodedURN = (new Buffer(urn)).toString('base64')
         var jobJSON = {
           "input": {
@@ -144,7 +154,7 @@ var init = function() {
           console.log("failure");
           console.log(err)
         }).then(res => {
-          console.log("translations complete for:" + urn)
+          console.log("translations complete for: " + urn)
           // save urns in array?
           // and then write to object,  {estate: bucketName, urns: [] }
           job = res
@@ -153,7 +163,10 @@ var init = function() {
     })
   })
 }
-init()
+auth().then(() => {
+  init()
+})
+
 /*
 var init = function() {
     // create bucket
