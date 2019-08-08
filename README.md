@@ -5,32 +5,22 @@ In this code pattern, we'll demonstrate how to import the metadata from a Autode
 
 This will allow for planners/developers to be able to monitor their building(s) in a central dashboard via charts, analytics tools, and more.
 
-We'll also demonstrate how to customize a building model with additional sensors, and use the Watson IoT Platform as an endpoint to upload live sensor data to Building Insights data.
+First, we'll demonstrate how to customize a building model by adding sensors using [Autodesk Revit](https://www.autodesk.com/products/revit/free-trial). Revit is a building information modeling (BIM) service, which will allow us to draw 3d models of our building with plumbing/electrical plans and various sensors (occupancy, temperature, etc). After customizing the model, we'll also show how to upload the model file to the Autodesk Fusion cloud service, which makes it easy to extract metadata.
 
-This can greatly expedite the integration process for potential clients who already have a model set up and want to rapidly register their devices
+Finally, we'll show how we can use our automation scripts to register all modeled sensors in Watson IoT Platform and TRIRIGA Building Insights. This can greatly expedite the integration process for potential clients who already have a model set up and want to rapidly register their devices. Once the sensors are registered, the Building Insights service will be able to create dashboard visualizations and predict trends/anomalies in real time.
 
 
 <!-- TODO, add arch -->
-<img src="https://i.imgur.com/FLU3sZ7.png">
+<img src="https://i.imgur.com/vigxqwl.png">
 
 # Flow
 1. BIM Model is designed in Revit. Local path to Revit file is provided to Node.js process.
-2. Node.js process uploads Model to Autodesk cloud service and converts it a more accessible format (.svf).
+2. Node.js process uploads Model to Autodesk cloud service and converts it a more accessible format (`.svf`).
 3. Node.js process extracts metadata from converted Model and generates a KITT Building Insights manifest.
 4. Upload KITT manifest to Building Insights via UI or Node.js process
 5. Register sensors for each building in Watson IoT Platform via UI or Node.js process
 6. Sensors publish data to Watson IoT Platform
 7. Sensor data is forwarded from Watson IoT Platform to Building Insights
-
-# Steps
-
-1. [Provision Cloud Services](#1-provision-cloud-services)
-2. [Clone Git Repository](#2-clone-git-repository)
-3. [Add Sensor(s) to BIM model](#3-add-sensors-to-bim-models)
-4. [Upload BIM model to Autodesk 360](#4-upload-bim-model-to-autodesk-360)
-5. [Extract BIM Metadata via Autodesk APIs](#5-Extract-BIM-Metadata-via-Autodesk-APIs)
-6. [Generate Building Insights KITT Model](#6-Generate-Building-Insights-KITT-Model)
-7. [Register sensors with Watson IoT Platform](#7-Register-sensors-with-Watson-IoT-Platform)
 
 
 ## Install Prerequisites:
@@ -56,7 +46,6 @@ We'll also need to sign up for the Autodesk 360 service. This is a cloud service
 
 https://forge.autodesk.com/
 
-
 After signing up, we'll need to create a set of app credentials, which will allow our Node.js script to authenticate to the Autodesk APIs.
 
 This can be done by clicking on "Create App"
@@ -67,6 +56,16 @@ Fill out the form with a name, description and a callback url (we'll use a dummy
 
 Copy the generated client id and secret into a .env file in the root directory of this project, once it is cloned
 <img src="https://i.imgur.com/nxoS0xD.png">
+
+# Steps
+
+1. [Provision Cloud Services](#1-provision-cloud-services)
+2. [Clone Git Repository](#2-clone-git-repository)
+3. [Add Sensor(s) to BIM model](#3-add-sensors-to-bim-model)
+4. [Upload BIM model to Autodesk 360](#4-upload-bim-model-to-autodesk-360)
+5. [Extract BIM Metadata via Autodesk APIs](#5-extract-bim-metadata)
+6. [Generate Building Insights KITT Model](#6-Generate-Building-Insights-KITT-Model)
+7. [Register sensors with Watson IoT Platform](#7-Register-sensors-with-Watson-IoT-Platform)
 
 ## 1. Provision Cloud Services
 Navigate to the following links to provision each service.
@@ -82,7 +81,7 @@ TRIRIGA and Building Insights will need to be obtained via the IBM Marketplace, 
 git clone https://github.com/IBM/tririga-semantic-bim
 ```
 
-## 3. Add Sensor(s) to BIM model
+## 3. Add Sensors to BIM model
 
 Next, we'll find sensors that match those within the building. The model number of the sensor doesn't have to be an exact match, just ensure the sensor type (humidity, light, etc) is the same. Search for an `.rfa` file that corresponds to the sensors within your building. A few sample sensors (daylight, occupancy) can be found at the archived Revit source  [here](http://revit.autodesk.com/library/archive2009/html/Revit%20MEP%202009%20Library/US%20Library/Families/Electrical%20Components/Lighting%20Devices/index.html)
 
