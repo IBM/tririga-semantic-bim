@@ -199,7 +199,7 @@ Now, MQTT publish commands can be made from a device in the following format:
 
 To publish messages, a MQTT client will need to be installed on the IoT devices responsible for reading and sending asset updates. These clients are very lightweight, and are able to run on resource constrained devices such as Arduino, Raspberry Pi, CHIP, etc.
 
-Now that we have a valid set of credentials, we can use an MQTT client to send a sample command. There are a few clients available online, but for simplicity we'll use a node cli client. This particular client can be installed by running `npm install -g mqtt`, and is also used by the Monitoring UI backend. After setting the MQTT credentials listed above (organization_id, device_type, device_id,username, password) we can publish a json payload with the following command:
+Now that we have a valid set of credentials, we can use an MQTT client to send a sample command. There are a few clients available online, but for simplicity we'll use a node cli client. This particular client can be installed by running `npm install -g mqtt`, and is also used by the Monitoring UI backend. After setting the MQTT credentials listed above (organization_id, device_type, device_id, username, password) we can publish a json payload with the following command:
 
 ```bash
 mqtt_pub -i "d:${organization_id}:${device_type}:${device_id}" -u "${username}" -P "${password}" -h "${organization_id}.messaging.internetofthings.ibmcloud.com" -p 1883 -t 'iot-2/evt/deviceupdate/fmt/json' -m '{
